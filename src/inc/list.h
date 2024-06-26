@@ -26,5 +26,5 @@ void list_unshift(list, void* item);
 void list_shift(list, void* buffer);
 void list_filter(list, list_filter_fn fn, const void* data);
 void list_to_string(list, char string[], unsigned short string_length, list_item_to_string_fn item_to_string_fn, unsigned short item_string_length);
-
+size_t list_calc_size(const unsigned short capacity, const unsigned short item_size);
 #endif

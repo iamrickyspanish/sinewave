@@ -2,6 +2,7 @@
 #define __SNW_VOICE_H
 
 #include "sigpath.h"
+#include "midi.h"
 
 typedef struct {
     sigpath path;
@@ -14,5 +15,6 @@ voice voice_create();
 void voice_destroy(voice);
 void voice_set_note(voice, note n);
 int voice_out(voice);
+size_t voice_calc_size();
 
 #endif

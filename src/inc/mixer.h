@@ -3,20 +3,27 @@
 
 #include <stdlib.h>
 
+
 typedef struct {
-    unsigned short in_count;
-    unsigned short* in_levels;
-    int* in_values;
-    
+    int value;
+    unsigned short level;
+} mixer_channel_t;
+
+typedef mixer_channel_t* mixer_channel;
+
+typedef struct {
+    unsigned short channel_count;
+    mixer_channel_t channels[];
 } mixer_t;
 
 typedef mixer_t* mixer;
 
-mixer mixer_create(unsigned short in_count);
+mixer mixer_create(unsigned short channel_count);
 void mixer_destroy(mixer);
-void mixer_in(mixer, unsigned short in_index, int value);
+void mixer_in(mixer, unsigned short channel_index, int value);
 int mixer_out(mixer);
-void mixer_set_lvl(mixer, unsigned short in_index, unsigned short lvl);
-unsigned short mixer_get_lvl(mixer, unsigned short in_index);
+void mixer_set_lvl(mixer, unsigned short channel_index, unsigned short lvl);
+unsigned short mixer_get_lvl(mixer, unsigned short channel_index);
+size_t mixer_calc_size(unsigned short channel_count);
 
 #endif

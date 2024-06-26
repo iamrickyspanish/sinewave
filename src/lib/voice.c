@@ -11,8 +11,14 @@ float note_to_frequency(note n) {
     return f;
 }
 
+size_t voice_calc_size() {
+    return sizeof(voice_t);//+sigpath_calc_size()+sizeof(note_t);
+};
+
+
 voice voice_create() {
-    voice v = malloc(sizeof(voice_t));
+
+    voice v = malloc(voice_calc_size());
     if (v) {
         v->path = sigpath_create();
         v->n = NULL;
@@ -35,5 +41,4 @@ int voice_out(voice v) {
     }
     return sigpath_out(v->path);    
 };
-
 

@@ -12,7 +12,20 @@
 #define MAX_POLYPHONY 8
 #define KEYS_SIZE 10
 
-int main(void) {
+note_t notes[KEYS_SIZE] = {
+    { 48, "C3" },
+    { 49, "C#3" },
+    { 50, "D3" },
+    { 51, "D#3" },
+    { 52, "E3" },
+    { 53, "F3" },
+    { 54, "F#3" },
+    { 55, "G3" },
+    { 56, "G#3" },
+    { 57, "A3" },
+    // { 58, "A#3" },
+    // { 59, "B3" },
+};  
 
 const kb_key_t keys[KEYS_SIZE] = {
     { 48, (unsigned short)KEY_ONE,"C3 " },
@@ -26,15 +39,47 @@ const kb_key_t keys[KEYS_SIZE] = {
     { 56, (unsigned short)KEY_NINE, "G#3" },
     { 57, (unsigned short)KEY_ZERO, "A3 " },
 };
+
+
+void handle_note_on_fn(unsigned short midi_code, void* e) {
+    note n = NULL;
+    for (unsigned short i = 0; i < KEYS_SIZE; i++) {
+        if (notes[i].midi_note_number == midi_code) {
+            n = &notes[i];
+            break;
+        }
+    }
+    if (n) {
+        engine_add_active_note((engine)e, n);
+    }        
+};
+
+void handle_note_off_fn(unsigned short midi_code, void* e) {
+    note n = NULL;
+    for (unsigned short i = 0; i < KEYS_SIZE; i++) {
+        if (notes[i].midi_note_number == midi_code) {
+            n = &notes[i];
+            break;
+        }
+    }
+    if (n) {
+        engine_remove_active_note((engine)e, n);
+    }        
+};
+
+int main(void) {
+
+
 // Initialization
     //--------------------------------------------------------------------------------------
     const int screenWidth = 800;
     const int screenHeight = 450;
-    short *data = (short *)malloc(sizeof(short)*SAMPLE_SIZE);
+    short *data = (short *)malloc(sizeof(short)*BUFFER_SIZE);
     
     ioaudio audio_interface = ioaudio_create(SAMPLE_SIZE, BUFFER_SIZE); 
-    osc osc1 = osc_create();
-    keyboard keyboard_comp = keyboard_create(keys, KEYS_SIZE, MAX_POLYPHONY);
+    engine audio_engine = engine_create(8, SAMPLE_SIZE);
+
+    keyboard virtual_keyboard = keyboard_create(keys, KEYS_SIZE, &handle_note_on_fn, &handle_note_off_fn);
     InitWindow(screenWidth, screenHeight, "sinewave, yo");
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------
@@ -44,27 +89,28 @@ const kb_key_t keys[KEYS_SIZE] = {
         // Refill audio stream if required ioaudio_is_ready(audio_interface) && 
         if (ioaudio_is_ready_for_write(audio_interface))
         {
-            osc_generate(osc1, data, BUFFER_SIZE);
+            engine_process(audio_engine, data, BUFFER_SIZE);
             ioaudio_write(audio_interface, data, BUFFER_SIZE);
         }
         ////
         // Update
         //----------------------------------------------------------------------------------
-        keyboard_listen(keyboard_comp);
+        keyboard_listen(virtual_keyboard, audio_engine);
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
-            keyboard_render(keyboard_comp);
+            // keyboard_render(virtual_keyboard);
             ClearBackground(RAYWHITE);
-            DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);            
+            DrawText("sinewaves, yo", 190, 200, 20, LIGHTGRAY);            
         EndDrawing();
         //----------------------------------------------------------------------------------
     }
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    osc_destroy(osc1);
+    // osc_destroy(osc1);
+    engine_destroy(audio_engine);
     ioaudio_destroy(audio_interface);
-    keyboard_destroy(keyboard_comp);
+    keyboard_destroy(virtual_keyboard);
     free(data);
     CloseWindow();
     //--------------------------------------------------------------------------------------

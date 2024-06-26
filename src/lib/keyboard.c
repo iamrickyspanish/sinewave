@@ -7,24 +7,23 @@
 
 #define ITEM_STRING_SIZE 5
 
-keyboard keyboard_create(const kb_key_t keys[], const unsigned short keys_size, const unsigned short polyphony) {
-    // long unsigned int size = sizeof(keyboard_t)+sizeof(kb_key_t)*keys_size+polyphony*sizeof(kb_key_t)+sizeof(list_t);
-    keyboard instance = malloc(sizeof(*instance)+sizeof(kb_key_t)*keys_size+polyphony*sizeof(kb_key_t)+sizeof(list_t));
+keyboard keyboard_create(const kb_key_t keys[], const unsigned short keys_size, note_on_handler handle_note_on, note_off_handler handle_note_off) {
+    keyboard kb = malloc(sizeof(*kb)+sizeof(kb_key_t)*keys_size);
     
-    if(instance) {
-        instance->keys_size = keys_size;
-        instance->pressed_keys = list_create(polyphony, sizeof(kb_key_t));    
-        instance->keys = malloc(sizeof(kb_key_t)*keys_size);
-        memcpy(instance->keys, keys, keys_size*sizeof(kb_key_t));
+    if(kb) {
+        kb->handle_note_on = handle_note_on;
+        kb->handle_note_off = handle_note_off;
+        kb->keys_size = keys_size;
+        kb->keys = malloc(sizeof(kb_key_t)*keys_size);
+        memcpy(kb->keys, keys, keys_size*sizeof(kb_key_t));
     };
 
-    return instance;
+    return kb;
 };
 
-void keyboard_destroy(keyboard instance) {
-    list_destroy(instance->pressed_keys);
-    free(instance->keys);
-    free(instance);
+void keyboard_destroy(keyboard kb) {
+    free(kb->keys);
+    free(kb);
 };
 
 bool remove_key_filter_fn(const void* pressed_key, const unsigned short i,const void* compare_key) {
@@ -34,33 +33,28 @@ bool remove_key_filter_fn(const void* pressed_key, const unsigned short i,const 
     return true;
 };
 
-void keyboard_listen(keyboard instance) {
-
-    for (unsigned short i = 0; i < instance->keys_size; i++) {
-        if(IsKeyPressed(instance->keys[i].key_code)) {            
-            // add note to active notes
-            list_filter(instance->pressed_keys, &remove_key_filter_fn, &instance->keys[i]);
-            kb_key_t k = instance->keys[i];
-            list_push(instance->pressed_keys, &k);            
-        } else if(IsKeyReleased((int)(instance->keys[i].key_code))) {
-            // remove note from active notes
-            list_filter(instance->pressed_keys, &remove_key_filter_fn, &instance->keys[i]);
+void keyboard_listen(keyboard kb, void* data) {
+    for (unsigned short i = 0; i < kb->keys_size; i++) {
+        if(IsKeyPressed(kb->keys[i].key_code)) {            
+            kb->handle_note_on(kb->keys[i].midi_code, data);
+        } else if(IsKeyReleased((int)(kb->keys[i].key_code))) {
+            kb->handle_note_off(kb->keys[i].midi_code, data);
         }
     }
 };
 
-void item_to_string_fn(const void* k,char string[], unsigned short string_length, unsigned short item_string_length) {      
+void item_to_string_fn(const void* kb,char string[], unsigned short string_length, unsigned short item_string_length) {      
     strcpy(string, strlen(string) != 0 ? " " : "");
     if (item_string_length < ITEM_STRING_SIZE)
      return;
-    strcat(string, ((kb_key)k)->label);
+    strcat(string, ((kb_key)kb)->label);
 };
 
-void keyboard_render(keyboard instance) {
-    unsigned short string_length = list_get_length(instance->pressed_keys)*ITEM_STRING_SIZE;
-    char* pressed_keys_string = malloc((string_length+1)*sizeof(char));
-    strcpy(pressed_keys_string, "");
-    list_to_string(instance->pressed_keys, pressed_keys_string, string_length, &item_to_string_fn, ITEM_STRING_SIZE);
-    puts(pressed_keys_string);
-    free(pressed_keys_string);
-}
+// void keyboard_render(keyboard kb) {
+//     unsigned short string_length = list_get_length(kb->pressed_keys)*ITEM_STRING_SIZE;
+//     char* pressed_keys_string = malloc((string_length+1)*sizeof(char));
+//     strcpy(pressed_keys_string, "");
+//     list_to_string(kb->pressed_keys, pressed_keys_string, string_length, &item_to_string_fn, ITEM_STRING_SIZE);
+//     puts(pressed_keys_string);
+//     free(pressed_keys_string);
+// }

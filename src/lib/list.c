@@ -6,8 +6,12 @@
 
 #include "keyboard.h"
 
+size_t list_calc_size(const unsigned short capacity, const unsigned short item_size) {
+    return sizeof(list_t) + capacity*item_size;
+};
+
 list list_create(const unsigned short capacity, const unsigned short item_size) {
-    list l = malloc(sizeof(list_t) + capacity*item_size);
+    list l = malloc(list_calc_size(capacity, item_size));
     if (l) {
         l->capacity = capacity;
         l->item_size = item_size;
@@ -93,4 +97,3 @@ void list_to_string(list l, char string[], unsigned short string_length, list_it
         strcat(string, items_as_string[i]);
     }
 };
-

@@ -13,17 +13,28 @@ typedef struct {
 
 typedef kb_key_t* kb_key;
 
+typedef void (*note_on_handler)(unsigned short midi_code, void* data);
+typedef void (*note_off_handler)(unsigned short midi_code, void* data);
+
 typedef struct {
     unsigned short keys_size;
-    list pressed_keys;
+    // list pressed_keys;
     kb_key_t* keys;
+    note_on_handler handle_note_on;
+    note_off_handler handle_note_off;
+    
 } keyboard_t;
 
 typedef keyboard_t* keyboard;
 
-keyboard keyboard_create(const kb_key_t* keys, const unsigned short keys_size, const unsigned short polyphony);
+keyboard keyboard_create(
+    const kb_key_t* keys,
+    const unsigned short keys_size,
+    note_on_handler handle_note_on,
+    note_off_handler handle_note_off
+);
 void keyboard_destroy(keyboard);
-void keyboard_listen(keyboard);
-void keyboard_render(keyboard);
+void keyboard_listen(keyboard, void* data);
+// void keyboard_render(keyboard);
 
 #endif
