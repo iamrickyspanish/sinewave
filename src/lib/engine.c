@@ -50,9 +50,8 @@ void engine_remove_active_note(engine e, note n) {
 short engine_out(engine e) {
     for (unsigned short i = 0; i < e->polyphony; i++) {
         voice v = (voice)(e->voices->items+i*e->voices->item_size);
-        // voice_out(v);
-        mixer_in(e->voice_mixer,i, 0);
-        mixer_in(e->voice_mixer,i, 0);
+        mixer_in(e->voice_mixer,i, voice_out(v));
+        // mixer_in(e->voice_mixer,i, 0);
     }
     return (short)(mixer_out(e->voice_mixer));
 };
@@ -67,13 +66,8 @@ void engine_process(engine e, short* buffer, unsigned short buffer_size) {
         mixer_set_lvl(e->voice_mixer, i, 100);//TODO: velocity
         voice_set_note((voice)(e->voices->items+i*e->voices->item_size), n);
     }
-    //TODO: do better
     
-    //TODO: this crashes the app:
     for (unsigned short i = 0; i < buffer_size; i++) {
-        // memcpy(buffer[0], engine_out(e), sizeof(short));
         buffer[i] = engine_out(e);
-        engine_out(e);
-
     }
 };

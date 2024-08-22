@@ -36,7 +36,4 @@ int sigpath_out(sigpath sp) {
     mixer_in(sp->osc_mixer, 0, osc_out(sp->osc1));
     mixer_in(sp->osc_mixer, 1, osc_out(sp->osc2));
     return mixer_out(sp->osc_mixer);
-    // mixer_in(sp->osc_mixer, 0U, 0);
-    // mixer_in(sp->osc_mixer, 1, 0);
-    // return 0;
 };
