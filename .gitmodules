@@ -1,0 +1,3 @@
+[submodule "dep/rbuffer"]
+	path = dep/rbuffer
+	url = https://github.com/iamrickyspanish/rbuffer

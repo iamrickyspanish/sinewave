@@ -12,7 +12,7 @@ float note_to_frequency(note n) {
 }
 
 size_t voice_calc_size() {
-    return sizeof(voice_t);//+sigpath_calc_size()+sizeof(note_t);
+    return sizeof(voice_t)+sigpath_calc_size();
 };
 
 
@@ -32,7 +32,8 @@ void voice_destroy(voice v) {
 };
 
 void voice_set_note(voice v, note n) {
-    memcpy(v->n, n, sizeof(note_t));
+    v-> n = n;
+    // memcpy(v->n, n, sizeof(note_t));
 };
 
 int voice_out(voice v) {

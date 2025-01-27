@@ -37,8 +37,7 @@ void osc_generate(osc instance, short* buffer, short frames) {
     }
 }
 
-
- short osc_out(osc o) {
+short osc_out(osc o) {
     o->audioFrequency =
         o->frequency + (o->audioFrequency - o->frequency)*0.95f;
     float incr = o->audioFrequency/44100.0f;

@@ -100,8 +100,20 @@ int main(void) {
         //----------------------------------------------------------------------------------
         BeginDrawing();
             // keyboard_render(virtual_keyboard);
+            unsigned short l = list_get_length(audio_engine->active_midi_notes);
             ClearBackground(RAYWHITE);
-            DrawText("sinewaves, yo", 190, 200, 20, LIGHTGRAY);            
+            DrawText("sinewaves, yo", 190, 200, 20, LIGHTGRAY);
+            DrawText(TextFormat("active note length: %d", l), 190, 220, 20, BLUE);
+            // note n = (note)list_at(audio_engine->active_midi_notes, 0);
+            // if (n) {
+            //     DrawText(n->name, 190, 240, 20, RED);
+            // }
+            for (unsigned short i = 0; i < l; i++) {
+                note n = (note)list_at(audio_engine->active_midi_notes, i);
+                // if (n) {
+                DrawText(n->name, 190+i*50, 240, 20, RED);
+                // }
+            }         
         EndDrawing();
         //----------------------------------------------------------------------------------
     }

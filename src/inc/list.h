@@ -20,6 +20,7 @@ void list_destroy(list);
 unsigned short list_get_length(const list);
 unsigned short list_get_capacity(const list);
 unsigned short list_get_item_size(const list);
+void* list_at(list, const unsigned short index);
 void list_push(list, const void* item);
 void list_pop(list, void* buffer);
 void list_unshift(list, void* item);

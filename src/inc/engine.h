@@ -6,11 +6,15 @@
 #include "list.h"
 #include "mixer.h"
 
+#define __SW_ENGINE_POLYPHONY_POS = 0
+#define __SW_ENGINE_SAMPLESIZE_POS = 1
+
+
 typedef struct {
     unsigned short polyphony;
     unsigned short sample_size;
-    list voices;
     mixer voice_mixer;
+    list voices;
     list active_midi_notes;
 } engine_t;
 

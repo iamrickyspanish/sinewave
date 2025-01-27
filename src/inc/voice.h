@@ -5,8 +5,8 @@
 #include "midi.h"
 
 typedef struct {
-    sigpath path;
     note n;
+    sigpath path;
 } voice_t;
 
 typedef voice_t* voice;

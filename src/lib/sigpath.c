@@ -1,8 +1,8 @@
 #include "sigpath.h"
 
 size_t sigpath_calc_size() {
-    // size_t mixer_size = mixer_calc_size(__SNW_OSC_COUNT);
-    return sizeof(sigpath_t);//+mixer_size;
+    size_t mixer_size = mixer_calc_size(__SNW_OSC_COUNT);
+    return sizeof(sigpath_t) + mixer_size;
 };
 
 sigpath sigpath_create() {

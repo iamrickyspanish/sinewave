@@ -7,7 +7,7 @@
 #include "keyboard.h"
 
 size_t list_calc_size(const unsigned short capacity, const unsigned short item_size) {
-    return sizeof(list_t) + capacity*item_size;
+    return sizeof(list_t) + capacity * item_size;
 };
 
 list list_create(const unsigned short capacity, const unsigned short item_size) {
@@ -67,7 +67,7 @@ void list_shift(list l, void* buffer) {
     memcpy(buffer, l->items, l->item_size);
     for (unsigned short i = 0; i < l->length-1; i++) {
         memcpy(l->items+i*l->item_size, l->items+(i+1)*l->item_size, l->item_size);
-    };
+    }
     l->length--;
 };
 
@@ -76,7 +76,7 @@ void list_filter(list l, list_filter_fn fn, const void* data) {
         if (!(*fn)(l->items+i*l->item_size, i, data)) {
             for (unsigned short j = i; j < l->length -1; j++) {
                 memcpy(l->items+j*l->item_size, l->items+(j+1)*l->item_size, l->item_size);
-            }
+            }            
             l->length--;
         };
     }
@@ -96,4 +96,8 @@ void list_to_string(list l, char string[], unsigned short string_length, list_it
         (*item_to_string_fn)(l->items+i*l->item_size, items_as_string[i], string_length,  item_string_length);
         strcat(string, items_as_string[i]);
     }
+};
+
+void* list_at(list l, const unsigned short index) {
+    return index < l->length ? l->items+index*l->item_size : NULL;
 };
