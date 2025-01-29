@@ -1,7 +1,7 @@
+#include "engine.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include "engine.h"
 
 //
 // unsigned short _engine_get_polyphony(engine e) {
@@ -40,30 +40,30 @@
 //
 
 
-size_t engine_calc_size(const unsigned short polyphony, const unsigned short sample_size) {
+size_t engine_calc_size (const unsigned short polyphony, const unsigned short sample_size) {
     // size_t voice_list_size = list_calc_size(polyphony, voice_calc_size());
     // size_t mixer_size  = mixer_calc_size(polyphony);
     // size_t active_midi_notes_list_size = list_calc_size(polyphony, sizeof(note_t));
-    return sizeof(engine_t);// + voice_list_size + mixer_size + active_midi_notes_list_size;
+    return sizeof (engine_t); // + voice_list_size + mixer_size + active_midi_notes_list_size;
 };
 
-engine engine_create(const unsigned short polyphony, const unsigned short sample_size) {
-    engine e = malloc(engine_calc_size(polyphony, sample_size));
+engine engine_create (const unsigned short polyphony, const unsigned short sample_size) {
+    engine e = malloc (engine_calc_size (polyphony, sample_size));
 
     if (e) {
         // _engine_set_polyphony(e, polyphony);
         // _engine_set_sample_size(e, sample_size);
         // _engine_set_voice_list(e, list_create(polyphony, voice_calc_size()), list_calc_size(polyphony, voice_calc_size()));
         // _engine_set_mixer(e, mixer_create(polyphony));
-        e->polyphony = polyphony;
+        e->polyphony   = polyphony;
         e->sample_size = sample_size;
-        e->voice_mixer = mixer_create(polyphony);
-        e->voices = list_create(polyphony, voice_calc_size());
+        e->voice_mixer = mixer_create (polyphony);
+        e->voices      = list_create (polyphony, voice_calc_size ());
         // memcpy(e->voices, list_create(polyphony, voice_calc_size()), list_calc_size(polyphony, voice_calc_size()));
         for (unsigned short i = 0; i < polyphony; i++) {
-            list_push(e->voices, voice_create());
+            list_push (e->voices, voice_create ());
         }
-        e->active_midi_notes = list_create(polyphony, sizeof(note_t));
+        e->active_midi_notes = list_create (polyphony, sizeof (note_t));
         // for (unsigned short i = 0; i < polyphony; i++) {
         //     list_push(e->active_midi_notes, NULL);
         // }
@@ -72,63 +72,56 @@ engine engine_create(const unsigned short polyphony, const unsigned short sample
     return e;
 };
 
-void engine_destroy(engine e) {
-    list_destroy(e->voices);
+void engine_destroy (engine e) {
+    list_destroy (e->voices);
     for (unsigned short i = 0; i < e->polyphony; i++) {
-        voice_destroy((voice)(e->voices + i*sizeof(voice_t)));
+        voice_destroy ((voice)(e->voices + i * sizeof (voice_t)));
     }
-    list_destroy(e->active_midi_notes);
-    mixer_destroy(e->voice_mixer);
-    free(e);
+    list_destroy (e->active_midi_notes);
+    mixer_destroy (e->voice_mixer);
+    free (e);
 };
 
-bool remove_note_filter_fn(const void* note, const unsigned short i, const void* compare_note) {
+
+bool remove_note_filter_fn (const void* note, const unsigned short i, const void* compare_note) {
     if (((note_t*)note)->midi_note_number == ((note_t*)compare_note)->midi_note_number) {
         return false;
     }
     return true;
 };
 
-void engine_add_active_note(engine e, note n) {
-    //
-    // unsigned short polyphony = (unsigned short)e;
-    // size_t voice_list_size = list_calc_size(polyphony, voice_calc_size());
-    // size_t mixer_size  = mixer_calc_size(polyphony);
-    // list note_list = (list)e+2*sizeof(unsigned short)+voice_list_size+mixer_size
-    // note_list
-    //
-    list_filter(e->active_midi_notes, &remove_note_filter_fn, n);
-    list_push(e->active_midi_notes, n);
+void engine_add_active_note (engine e, note n) {
+    list_filter (e->active_midi_notes, &remove_note_filter_fn, n);
+    list_push (e->active_midi_notes, n);
 };
 
-void engine_remove_active_note(engine e, note n) {
-        list_filter(e->active_midi_notes, &remove_note_filter_fn, n);
+void engine_remove_active_note (engine e, note n) {
+    list_filter (e->active_midi_notes, &remove_note_filter_fn, n);
 };
 
-short engine_out(engine e) {
+short engine_out (engine e) {
     for (unsigned short i = 0; i < e->polyphony; i++) {
-        voice v = (voice)(e->voices->items+i*e->voices->item_size);
-        mixer_in(e->voice_mixer,i, voice_out(v));
-        // mixer_in(e->voice_mixer,i, 0);
+        voice v = (voice)(e->voices->items + i * e->voices->item_size);
+        mixer_in (e->voice_mixer, i, voice_out (v));
     }
-    return (short)(mixer_out(e->voice_mixer));
+    return (short)(mixer_out (e->voice_mixer));
 };
 
-void engine_process(engine e, short* buffer, unsigned short buffer_size) {
-    // const unsigned short active_note_lengthc = list_get_length(e->active_midi_notes);
+void engine_process (engine e, short* buffer, unsigned short buffer_size) {
+    unsigned short l = list_get_length (e->active_midi_notes);
     for (unsigned short i = 0; i < e->polyphony; i++) {
-        voice v = (voice)(e->voices->items+i*e->voices->item_size);
-        if(i >= list_get_length(e->active_midi_notes)) {
-            mixer_set_lvl(e->voice_mixer, i, 0);
-            voice_set_note(v, NULL);
+        voice v = (voice)list_at (e->voices, i);
+        if (i >= l) {
+            mixer_set_lvl (e->voice_mixer, i, 0);
+            voice_set_note (v, NULL);
             continue;
         }
-        note n = (note)(e->active_midi_notes->items+i*e->active_midi_notes->item_size);
-        mixer_set_lvl(e->voice_mixer, i, 100);//TODO: velocity
-        voice_set_note(v, n);
+        note n = (note)(e->active_midi_notes->items + i * e->active_midi_notes->item_size);
+        mixer_set_lvl (e->voice_mixer, i, 100); // TODO: velocity
+        voice_set_note (v, n);
     }
-    
+
     for (unsigned short i = 0; i < buffer_size; i++) {
-        //  engine_out(e);
+        buffer[i] = engine_out (e);
     }
 };
