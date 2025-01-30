@@ -5,12 +5,17 @@ size_t sigpath_calc_size () {
     return sizeof (sigpath_t) + mixer_size;
 };
 
-sigpath sigpath_create () {
+sigpath sigpath_create (const sigpath_state init_state) {
     sigpath sp = malloc (sigpath_calc_size ());
     if (sp) {
-        sp->osc1      = osc_create ();
-        sp->osc2      = osc_create ();
-        sp->osc_mixer = mixer_create (__SNW_OSC_COUNT);
+        sp->osc1            = osc_create ();
+        sp->osc2            = osc_create ();
+        sp->state           = malloc (sizeof (sigpath_state_t));
+        sp->state->osc1Freq = init_state ? init_state->osc1Freq : 0;
+        sp->state->osc2Freq = init_state ? init_state->osc2Freq : 0;
+        sp->state->osc1Lvl  = init_state ? init_state->osc1Lvl : 0;
+        sp->state->osc2Lvl  = init_state ? init_state->osc2Lvl : 0;
+        sp->osc_mixer       = mixer_create (__SNW_OSC_COUNT);
     }
     return sp;
 };
@@ -22,17 +27,21 @@ void sigpath_destroy (sigpath sp) {
     free (sp);
 };
 
-void sigpath_set_osc_lvl (sigpath sp, unsigned short index, unsigned short lvl) {
-    mixer_set_lvl (sp->osc_mixer, index, lvl);
-};
-
-
-void sigpath_set_oscs_freq (sigpath sp, float freq) {
-    osc_set_freq (sp->osc1, freq);
-    osc_set_freq (sp->osc2, freq);
+void sigpath_set_state (sigpath sp, sigpath_state_attr attr, sigpath_state_value value) {
+    switch (attr) {
+    case OSC1_FREQ: sp->state->osc1Freq = value.float_val; break;
+    case OSC2_FREQ: sp->state->osc2Freq = value.float_val; break;
+    case OSC1_LVL: sp->state->osc1Lvl = value.ushort_val; break;
+    case OSC2_LVL: sp->state->osc2Lvl = value.ushort_val; break;
+    }
 };
 
 int sigpath_out (sigpath sp) {
+    osc_set_freq (sp->osc1, sp->state->osc1Freq);
+    osc_set_freq (sp->osc2, sp->state->osc2Freq);
+    mixer_set_lvl (sp->osc_mixer, 1, sp->state->osc1Lvl);
+    mixer_set_lvl (sp->osc_mixer, 2, sp->state->osc2Lvl);
+    ///
     mixer_in (sp->osc_mixer, 0, osc_out (sp->osc1));
     mixer_in (sp->osc_mixer, 1, osc_out (sp->osc2));
     return mixer_out (sp->osc_mixer);

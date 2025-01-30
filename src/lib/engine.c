@@ -50,6 +50,12 @@ size_t engine_calc_size (const unsigned short polyphony, const unsigned short sa
 engine engine_create (const unsigned short polyphony, const unsigned short sample_size) {
     engine e = malloc (engine_calc_size (polyphony, sample_size));
 
+    sigpath_state_t init_state;
+    init_state.osc1Freq = 440.0f;
+    init_state.osc2Freq = 440.0f;
+    init_state.osc1Lvl  = 100;
+    init_state.osc2Lvl  = 100;
+
     if (e) {
         // _engine_set_polyphony(e, polyphony);
         // _engine_set_sample_size(e, sample_size);
@@ -61,7 +67,7 @@ engine engine_create (const unsigned short polyphony, const unsigned short sampl
         e->voices      = list_create (polyphony, voice_calc_size ());
         // memcpy(e->voices, list_create(polyphony, voice_calc_size()), list_calc_size(polyphony, voice_calc_size()));
         for (unsigned short i = 0; i < polyphony; i++) {
-            list_push (e->voices, voice_create ());
+            list_push (e->voices, voice_create (&init_state));
         }
         e->active_midi_notes = list_create (polyphony, sizeof (note_t));
         // for (unsigned short i = 0; i < polyphony; i++) {
@@ -113,11 +119,13 @@ void engine_process (engine e, short* buffer, unsigned short buffer_size) {
         voice v = (voice)list_at (e->voices, i);
         if (i >= l) {
             mixer_set_lvl (e->voice_mixer, i, 0);
+
             voice_set_note (v, NULL);
             continue;
         }
         note n = (note)(e->active_midi_notes->items + i * e->active_midi_notes->item_size);
         mixer_set_lvl (e->voice_mixer, i, 100); // TODO: velocity
+        // sigpath_set_state(OSC1_FREQ,)
         voice_set_note (v, n);
     }
 

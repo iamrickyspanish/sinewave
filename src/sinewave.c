@@ -9,12 +9,13 @@
 
 #define SAMPLE_SIZE 512
 #define BUFFER_SIZE 4096
-#define MAX_POLYPHONY 8
+#define MAX_POLYPHONY 1
 #define KEYS_SIZE 10
 
 note_t notes[KEYS_SIZE] = {
-    { 48, "C3" }, { 49, "C#3" }, { 50, "D3" }, { 51, "D#3" }, { 52, "E3" },
-    { 53, "F3" }, { 54, "F#3" }, { 55, "G3" }, { 56, "G#3" }, { 57, "A3" },
+    { 48, "C3", 130.81f }, { 49, "C#3", 138.59 }, { 50, "D3", 146.83 },
+    { 51, "D#3", 155.56 }, { 52, "E3", 164.81 }, { 53, "F3", 174.61 },
+    { 54, "F#3", 185.00 }, { 55, "G3", 196.00 }, { 56, "G#3", 207.65 }, { 57, "A3", 220.00 },
     // { 58, "A#3" },
     // { 59, "B3" },
 };
@@ -119,8 +120,8 @@ int main (void) {
         // if () {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             if (i % (BUFFER_SIZE / screenWidth) == 0) {
-                DrawText (TextFormat ("." /*"%d", data[0]*/),
-                i / (BUFFER_SIZE / screenWidth), 350 + data[i] / 100, 20, BLACK);
+                DrawText (TextFormat ("."), i / (BUFFER_SIZE / screenWidth),
+                350 + data[i] / 100, 20, BLACK);
             }
         }
         // }
