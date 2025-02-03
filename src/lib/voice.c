@@ -1,49 +1,56 @@
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "midi.h"
 #include "voice.h"
 
-// TODO: move to midi.h/midi.c, use a lookup table
-// float note_to_frequency (note n) {
-//     float f = 110.0f * (pow (2, (n->midi_note_number - 69) / 12));
-//     return f;
-// }
-
 size_t voice_calc_size () {
-    return sizeof (voice_t) + sigpath_calc_size ();
+    size_t mixer_size = mixer_calc_size (__SNW_OSC_COUNT);
+    return sizeof (voice_t) + mixer_size;
 };
 
-
-voice voice_create (sigpath_state init_sigpath_state) {
-
-    voice v = malloc (voice_calc_size ());
-
-    if (v) {
-        v->path = sigpath_create (init_sigpath_state);
-        v->n    = NULL;
+voice voice_create (const voice_state init_state) {
+    voice sp = malloc (voice_calc_size ());
+    if (sp) {
+        sp->osc1            = osc_create ();
+        sp->osc2            = osc_create ();
+        sp->state           = malloc (sizeof (voice_state_t));
+        sp->state->osc1Freq = init_state ? init_state->osc1Freq : 0;
+        sp->state->osc2Freq = init_state ? init_state->osc2Freq : 0;
+        sp->state->osc1Lvl  = init_state ? init_state->osc1Lvl : 0;
+        sp->state->osc2Lvl  = init_state ? init_state->osc2Lvl : 0;
+        sp->state->lvl      = init_state ? init_state->lvl : 0;
+        sp->osc_mixer       = mixer_create (__SNW_OSC_COUNT);
     }
-    return v;
+    return sp;
 };
 
-void voice_destroy (voice v) {
-    sigpath_destroy (v->path);
-    free (v);
+void voice_destroy (voice sp) {
+    osc_destroy (sp->osc1);
+    osc_destroy (sp->osc2);
+    mixer_destroy (sp->osc_mixer);
+    free (sp);
 };
 
-void voice_set_note (voice v, note n) {
-    v->n = n;
+void voice_set_state (voice sp, voice_state state) {
+    memcpy (sp->state, state, sizeof (voice_state_t));
 };
 
-int voice_out (voice v) {
-    if (v->n) {
-        sigpath_state_value value;
-        value.float_val = v->n->freq; // * 4.0f;
-        // printf ("%s - %d:  %f\n", v->n->name, v->n->midi_note_number, v->n->freq);
-        sigpath_set_state (v->path, OSC1_FREQ, value);
-        sigpath_set_state (v->path, OSC2_FREQ, value);
+void voice_set_state_attr (voice sp, voice_state_attr attr, voice_state_value value) {
+    switch (attr) {
+    case OSC1_FREQ: sp->state->osc1Freq = value.float_val; break;
+    case OSC2_FREQ: sp->state->osc2Freq = value.float_val; break;
+    case OSC1_LVL: sp->state->osc1Lvl = value.ushort_val; break;
+    case OSC2_LVL: sp->state->osc2Lvl = value.ushort_val; break;
+    case LVL:
+        sp->state->lvl = value.ushort_val > 100 ? 100 : value.ushort_val;
+        break;
     }
-    return sigpath_out (v->path);
+};
+
+int voice_out (voice sp) {
+    osc_set_freq (sp->osc1, sp->state->osc1Freq);
+    osc_set_freq (sp->osc2, sp->state->osc2Freq);
+    mixer_set_lvl (sp->osc_mixer, 1, sp->state->osc1Lvl);
+    mixer_set_lvl (sp->osc_mixer, 2, sp->state->osc2Lvl);
+    ///
+    mixer_in (sp->osc_mixer, 0, osc_out (sp->osc1));
+    mixer_in (sp->osc_mixer, 1, osc_out (sp->osc2));
+    return (mixer_out (sp->osc_mixer) / 100 * sp->state->lvl);
 };

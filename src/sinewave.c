@@ -5,11 +5,13 @@
 #include "engine.h"
 #include "ioaudio.h"
 #include "keyboard.h"
+#include "midi.h"
 #include "raylib.h"
+#include "voice.h"
 
 #define SAMPLE_SIZE 512
 #define BUFFER_SIZE 4096
-#define MAX_POLYPHONY 1
+#define MAX_POLYPHONY 4
 #define KEYS_SIZE 10
 
 note_t notes[KEYS_SIZE] = {
@@ -33,8 +35,14 @@ const kb_key_t keys[KEYS_SIZE] = {
     { 57, (unsigned short)KEY_ZERO, "A3 " },
 };
 
+bool remove_note_filter_fn (const void* note, const unsigned short i, const void* compare_note) {
+    if (((note_t*)note)->midi_note_number == ((note_t*)compare_note)->midi_note_number) {
+        return false;
+    }
+    return true;
+};
 
-void handle_note_on_fn (unsigned short midi_code, void* e) {
+void handle_note_on_fn (unsigned short midi_code, void* active_notes) {
     note n = NULL;
     for (unsigned short i = 0; i < KEYS_SIZE; i++) {
         if (notes[i].midi_note_number == midi_code) {
@@ -43,11 +51,13 @@ void handle_note_on_fn (unsigned short midi_code, void* e) {
         }
     }
     if (n) {
-        engine_add_active_note ((engine)e, n);
+        list_filter ((list)active_notes, &remove_note_filter_fn, n);
+        list_push ((list)active_notes, n);
     }
 };
 
-void handle_note_off_fn (unsigned short midi_code, void* e) {
+
+void handle_note_off_fn (unsigned short midi_code, void* active_notes) {
     note n = NULL;
     for (unsigned short i = 0; i < KEYS_SIZE; i++) {
         if (notes[i].midi_note_number == midi_code) {
@@ -56,7 +66,7 @@ void handle_note_off_fn (unsigned short midi_code, void* e) {
         }
     }
     if (n) {
-        engine_remove_active_note ((engine)e, n);
+        list_filter ((list)active_notes, &remove_note_filter_fn, n);
     }
 };
 
@@ -70,12 +80,14 @@ int main (void) {
     short* data            = (short*)malloc (sizeof (short) * BUFFER_SIZE);
 
     ioaudio audio_interface = ioaudio_create (SAMPLE_SIZE, BUFFER_SIZE);
-    engine audio_engine     = engine_create (8, SAMPLE_SIZE);
-
+    engine audio_engine     = engine_create (MAX_POLYPHONY, SAMPLE_SIZE);
+    list active_midi_notes  = list_create (MAX_POLYPHONY, sizeof (note_t));
     keyboard virtual_keyboard =
     keyboard_create (keys, KEYS_SIZE, &handle_note_on_fn, &handle_note_off_fn);
     InitWindow (screenWidth, screenHeight, "sinewave, yo");
     SetTargetFPS (60);
+
+
     // int osc_i = 0;
     //--------------------------------------------------------------------------------------
     // Main loop
@@ -89,42 +101,52 @@ int main (void) {
         ////
         // Update
         //----------------------------------------------------------------------------------
-        keyboard_listen (virtual_keyboard, audio_engine);
+        keyboard_listen (virtual_keyboard, active_midi_notes);
+        // voice_state curr_state;
+        unsigned short notes_length = list_get_length (active_midi_notes);
+        for (unsigned short i = 0; i < audio_engine->polyphony; i++) {
+            voice_state_value val;
+            if (i >= notes_length) {
+                val.ushort_val = 0;
+                engine_set_voice_state_attr (audio_engine, i, LVL, val);
+                continue;
+            }
+            note n        = (note)list_at (active_midi_notes, i);
+            val.float_val = n->freq;
+            engine_set_voice_state_attr (audio_engine, i, OSC1_FREQ, val);
+            engine_set_voice_state_attr (audio_engine, i, OSC2_FREQ, val);
+            val.ushort_val = 100;
+            engine_set_voice_state_attr (audio_engine, i, LVL, val);
+        }
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing ();
         // keyboard_render(virtual_keyboard);
-        unsigned short l  = list_get_length (audio_engine->active_midi_notes);
-        unsigned short lv = list_get_length (audio_engine->voices);
+        unsigned short l = list_get_length (active_midi_notes);
         ClearBackground (RAYWHITE);
         DrawText ("sinewaves, yo", 190, 200, 20, LIGHTGRAY);
         DrawText (TextFormat ("active note length: %d", l), 190, 220, 20, BLUE);
         for (unsigned short i = 0; i < l; i++) {
-            note n = (note)list_at (audio_engine->active_midi_notes, i);
-            // if (n) {
-            DrawText (n->name, 190 + i * 50, 240, 20, RED);
-            // }
-        }
-        for (unsigned short i = 0; i < lv; i++) {
-            voice v = (voice)list_at (audio_engine->voices, i);
-            // if (n) {
-            DrawText (v->n ? v->n->name : "-", 190 + i * 50, 260, 20, GREEN);
-            // }
+            note n = (note)list_at (active_midi_notes, i);
+            DrawText (n->name, 190 + i * 70, 240, 20, RED);
         }
         for (unsigned short i = 0; i < MAX_POLYPHONY; i++) {
-            unsigned short lvl = mixer_get_lvl (audio_engine->voice_mixer, i);
-            // if (n) {
-            DrawText (TextFormat ("%d", lvl), 190 + i * 50, 280, 20, BROWN);
-            // }
+            voice_state vs = engine_get_voice_state (audio_engine, i);
+            // voice v = (voice)list_at (audio_engine->voices, i);
+            DrawText (vs ? TextFormat ("%.2f", vs->osc1Freq) : "-",
+            190 + i * 70, 260, 20, GREEN);
         }
-        // if () {
+        for (unsigned short i = 0; i < MAX_POLYPHONY; i++) {
+            voice_state vs = engine_get_voice_state (audio_engine, i);
+            DrawText (vs ? TextFormat ("%d", vs->lvl) : "-", 190 + i * 70, 280, 20, BROWN);
+        }
+        // oscilloscope
         for (int i = 0; i < BUFFER_SIZE; i++) {
             if (i % (BUFFER_SIZE / screenWidth) == 0) {
-                DrawText (TextFormat ("."), i / (BUFFER_SIZE / screenWidth),
+                DrawText (".", i / (BUFFER_SIZE / screenWidth),
                 350 + data[i] / 100, 20, BLACK);
             }
         }
-        // }
 
         EndDrawing ();
         //----------------------------------------------------------------------------------
