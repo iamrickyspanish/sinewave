@@ -9,7 +9,7 @@ CFLAGS=-Wall -g
 IFLAGS=-Isrc/inc -I$(DEPDIR)/rbuffer/inc -I$(DEPDIR)/raylib/include -L$(DEPDIR)/raylib/lib
 LFLAGS=-lraylib -lm
 # SRCS=$(SRCDIR)/sinewave.c $(DEPDIR)/rbuffer/src/rbuffer.c
-OBJS=$(OBJDIR)/sinewave.o $(OBJDIR)/rbuffer.o $(OBJDIR)/lib/ioaudio.o $(OBJDIR)/lib/osc.o $(OBJDIR)/lib/keyboard.o $(OBJDIR)/lib/voice.o $(OBJDIR)/lib/engine.o $(OBJDIR)/lib/list.o $(OBJDIR)/lib/mixer.o #$(DEPDIR)/raylib/lib/libraylib.a
+OBJS=$(OBJDIR)/sinewave.o $(OBJDIR)/rbuffer.o $(OBJDIR)/lib/ioaudio.o $(OBJDIR)/lib/osc.o $(OBJDIR)/lib/keyboard.o $(OBJDIR)/lib/voice.o $(OBJDIR)/lib/engine.o $(OBJDIR)/lib/list.o $(OBJDIR)/lib/mixer.o $(OBJDIR)/lib/rotary.o#$(DEPDIR)/raylib/lib/libraylib.a
 
 all: $(OBJS)
 	$(CC) $(CFLAGS) $(IFLAGS) $(OBJS) -o $(DSTDIR)/sinewave $(LFLAGS)
@@ -45,6 +45,10 @@ $(OBJDIR)/lib/list.o: $(SRCDIR)/lib/list.c
 	$(CC) $(CFLAGS) $(IFLAGS) -c $< -o $@
 
 $(OBJDIR)/lib/mixer.o: $(SRCDIR)/lib/mixer.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(IFLAGS) -c $< -o $@
+
+$(OBJDIR)/lib/rotary.o: $(SRCDIR)/lib/rotary.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(IFLAGS) -c $< -o $@
 # $(OBJ): $(SRCS)

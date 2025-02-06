@@ -7,6 +7,7 @@
 #include "keyboard.h"
 #include "midi.h"
 #include "raylib.h"
+#include "rotary.h"
 #include "voice.h"
 
 #define SAMPLE_SIZE 512
@@ -87,7 +88,7 @@ int main (void) {
     InitWindow (screenWidth, screenHeight, "sinewave, yo");
     SetTargetFPS (60);
 
-
+    rotary osc1_freq_rotary = rotary_create (190, 200, false, NULL);
     // int osc_i = 0;
     //--------------------------------------------------------------------------------------
     // Main loop
@@ -118,6 +119,9 @@ int main (void) {
             val.ushort_val = 100;
             engine_set_voice_state_attr (audio_engine, i, LVL, val);
         }
+
+        rotary_listen (osc1_freq_rotary);
+
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing ();
@@ -126,6 +130,7 @@ int main (void) {
         ClearBackground (RAYWHITE);
         DrawText ("sinewaves, yo", 190, 200, 20, LIGHTGRAY);
         DrawText (TextFormat ("active note length: %d", l), 190, 220, 20, BLUE);
+        rotary_render (osc1_freq_rotary);
         for (unsigned short i = 0; i < l; i++) {
             note n = (note)list_at (active_midi_notes, i);
             DrawText (n->name, 190 + i * 70, 240, 20, RED);
@@ -144,7 +149,7 @@ int main (void) {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             if (i % (BUFFER_SIZE / screenWidth) == 0) {
                 DrawText (".", i / (BUFFER_SIZE / screenWidth),
-                350 + data[i] / 100, 20, BLACK);
+                350 + (data[i] / 2) / 100, 20, BLACK);
             }
         }
 
