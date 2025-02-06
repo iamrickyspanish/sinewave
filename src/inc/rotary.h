@@ -21,8 +21,13 @@ typedef struct {
 
 typedef rotary_t* rotary;
 
-rotary rotary_create (int pos_x, int pos_y, bool centered, rotary_change_handler handle_change);
+rotary rotary_create (int pos_x,
+int pos_y,
+bool centered,
+unsigned short initial_value,
+rotary_change_handler handle_change);
 void rotary_set_value (rotary, unsigned short value);
+unsigned short rotary_get_value (rotary);
 void rotary_listen (rotary);
 void rotary_render (rotary);
 

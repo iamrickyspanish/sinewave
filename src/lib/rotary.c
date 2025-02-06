@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-rotary rotary_create (int pos_x, int pos_y, bool centered, rotary_change_handler handle_change) {
+rotary rotary_create (int pos_x,
+int pos_y,
+bool centered,
+unsigned short initial_value,
+rotary_change_handler handle_change) {
     rotary r               = malloc (sizeof (rotary_t));
     Vector2 last_mouse_pos = { 0, 0 };
     if (r) {
@@ -12,7 +16,7 @@ rotary rotary_create (int pos_x, int pos_y, bool centered, rotary_change_handler
         r->pos_y          = pos_y;
         r->centered       = centered;
         r->on_change      = handle_change;
-        r->value          = 64;
+        r->value          = initial_value;
         r->hover          = false;
         r->pressed        = false;
         r->last_mouse_pos = last_mouse_pos;
@@ -47,6 +51,10 @@ void rotary_listen (rotary r) {
         r->last_mouse_pos = mouse_pos;
     }
 };
+
+unsigned short rotary_get_value (rotary r) {
+    return r->value;
+}
 
 void rotary_render (rotary r) {
     // int perimeter = 2 * RADIUS * PI;

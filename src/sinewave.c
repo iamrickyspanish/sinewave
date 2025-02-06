@@ -88,7 +88,7 @@ int main (void) {
     InitWindow (screenWidth, screenHeight, "sinewave, yo");
     SetTargetFPS (60);
 
-    rotary osc1_freq_rotary = rotary_create (190, 200, false, NULL);
+    rotary osc2_fine_rotary = rotary_create (190, 150, false, 64, NULL);
     // int osc_i = 0;
     //--------------------------------------------------------------------------------------
     // Main loop
@@ -103,6 +103,7 @@ int main (void) {
         // Update
         //----------------------------------------------------------------------------------
         keyboard_listen (virtual_keyboard, active_midi_notes);
+        rotary_listen (osc2_fine_rotary);
         // voice_state curr_state;
         unsigned short notes_length = list_get_length (active_midi_notes);
         for (unsigned short i = 0; i < audio_engine->polyphony; i++) {
@@ -112,15 +113,27 @@ int main (void) {
                 engine_set_voice_state_attr (audio_engine, i, LVL, val);
                 continue;
             }
-            note n        = (note)list_at (active_midi_notes, i);
+            note n = (note)list_at (active_midi_notes, i);
+            //
+            unsigned short fine_value = rotary_get_value (osc2_fine_rotary);
+            // float next_oct_freq       = n->freq * 2;
+            // float prev_oct_freq       = n->freq / 2;
+            bool negative = fine_value < 64;
+            unsigned short absolute_fine_value =
+            negative ? 64 - fine_value : fine_value - 64;
+            unsigned short absolute_fine_delta =
+            ((negative ? n->freq / 2 : n->freq) / 64) * absolute_fine_value;
+            // unsigned short osc2_delta_fine = negative ? 0 : 0;
             val.float_val = n->freq;
             engine_set_voice_state_attr (audio_engine, i, OSC1_FREQ, val);
+            printf ("test: %d\n\n", absolute_fine_delta);
+            val.float_val =
+            n->freq + (negative ? 0 - absolute_fine_delta : absolute_fine_delta);
             engine_set_voice_state_attr (audio_engine, i, OSC2_FREQ, val);
             val.ushort_val = 100;
             engine_set_voice_state_attr (audio_engine, i, LVL, val);
         }
 
-        rotary_listen (osc1_freq_rotary);
 
         // Draw
         //----------------------------------------------------------------------------------
@@ -130,7 +143,7 @@ int main (void) {
         ClearBackground (RAYWHITE);
         DrawText ("sinewaves, yo", 190, 200, 20, LIGHTGRAY);
         DrawText (TextFormat ("active note length: %d", l), 190, 220, 20, BLUE);
-        rotary_render (osc1_freq_rotary);
+        rotary_render (osc2_fine_rotary);
         for (unsigned short i = 0; i < l; i++) {
             note n = (note)list_at (active_midi_notes, i);
             DrawText (n->name, 190 + i * 70, 240, 20, RED);
